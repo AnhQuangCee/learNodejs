@@ -22,28 +22,48 @@ exports.getLogin = (req, res, next) => {
     res.render('auth/login', {
         pageTitle: 'Login page',
         path: '/login',
-        errorMessage: message
+        errorMessage: message,
+        oldInput: {
+            email: '',
+            password: ''
+        },
+        validationErrors: []
     })
 }
 
 exports.postLogin = (req, res, next) => {
     const email = req.body.email
     const password = req.body.password
+    const confirmPassword = req.body.confirmPassword
 
     const errors = validationResult(req)
     if (!errors.isEmpty()) {
         return res.status(422).render('auth/login', {
             pageTitle: 'Login',
             path: '/login',
-            errorMessage: errors.array()[0].msg
+            errorMessage: errors.array()[0].msg,
+            oldInput: {
+                email: email,
+                password: password
+            },
+            validationErrors: errors.array()
         })
     }
 
     User.findOne({ email: email })
         .then(user => {
             if (!user) {
-                req.flash('error', 'Invalid email or password!')
-                return res.redirect('/login')
+                return res.status(422).render('auth/login', {
+                    pageTitle: 'Login',
+                    path: '/login',
+                    errorMessage: 'Invalid email or password!',
+                    oldInput: {
+                        email: email,
+                        password: password,
+                        confirmPassword: confirmPassword
+                    },
+                    validationErrors: []
+                })
             }
             bcrypt.compare(password, user.password)
                 .then(doMatch => {
@@ -54,7 +74,17 @@ exports.postLogin = (req, res, next) => {
                             return res.redirect('/')
                         })
                     }
-                    res.redirect('/login')
+                    return res.status(422).render('auth/login', {
+                        pageTitle: 'Login',
+                        path: '/login',
+                        errorMessage: 'Invalid email or password!',
+                        oldInput: {
+                            email: email,
+                            password: password,
+                            confirmPassword: confirmPassword
+                        },
+                        validationErrors: []
+                    })
                 })
                 .catch(err => {
                     console.log(err)
