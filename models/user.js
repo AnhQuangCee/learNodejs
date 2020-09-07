@@ -5,12 +5,18 @@ const Schema = mongoose.Schema
 const userSchema = new Schema({
     name: {
         type: String,
-        required: true
+        required: false
     },
     email: {
         type: String,
         required: true
     },
+    password: {
+        type: String,
+        required: true
+    },
+    resetToken: String,
+    resetTokenExpiration: Date,
     cart: {
         items: [
             {
@@ -57,6 +63,12 @@ userSchema.methods.removeFromCart = function (productId) {
     })
     const updateCart = { items: updateCartItems }
     this.cart = updateCart
+    return this.save()
+}
+
+// Clear Cart after Oder
+userSchema.methods.clearCart = function () {
+    this.cart = { items: [] }
     return this.save()
 }
 
